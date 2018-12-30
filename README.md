@@ -30,8 +30,8 @@ IOT Software/Firmware used:
 
 Ingestion web server:
 - made in python3/flask
-- current db is sqlite3 (other databases support is trivial, as long as they have a complient python3 db api).
+- current db is sqlite3 (other databases support is trivial, as long as they have a compliant python3 db api).
 
 Not yet implemented:
-- a web interface to view the readings.
+- web interface to view/explore the data
 - https, to eliminate vulnerabilities to message replay
