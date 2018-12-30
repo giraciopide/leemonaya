@@ -1,114 +1,141 @@
 #include <ESP8266WiFi.h>            // https://arduino-esp8266.readthedocs.io/en/latest/index.html
 #include <ESP8266HTTPClient.h>
 #include <SimpleDHT.h>
-#include <Crypto.h>                 // https://github.com/intrbiz/arduino-crypto // this is esp2866 specific!
+#include <Crypto.h>                 // https://github.com/intrbiz/arduino-crypto note that this is esp2866 specific!
 #include <base64.h>
 
+//
+// Configuration, all stuff should be self explanatory.
+// Intervals are in millis.
+// 
+// The HMAC_KEY_LENGTH and hmac_key can taken by the ingestor server logs.
+// Just set your desidered key in the ingestor server and at startup it will log (to stdout)
+// an actual C snippet to past here.
+//
 #define WIFI_SSID "this_should_be_the_wifi_ssid"
 #define WIFI_PASS "this_should_be_your_wifi_password"
+#define CONNECTION_RETRY_INTERVAL 500
+
 #define SENSOR_DATA_POST_URL "http://192.168.1.10:5000/station-data"
 #define STATION_ID "limonaia"
+#define SAMPLE_INTERVAL 5000
 
 #define HMAC_KEY_LENGTH 46
 static uint8_t hmac_key[HMAC_KEY_LENGTH] = {49, 50, 97, 115, 112, 111, 100, 117, 52, 104, 114, 106, 49, 195, 168, 50, 51, 57, 48, 106, 114, 49, 195, 168, 48, 101, 57, 102, 106, 49, 195, 168, 48, 101, 105, 110, 102, 49, 195, 168, 50, 48, 101, 43, 51, 49};
 
-#define CONNECTION_RETRY_INTERVAL 500
-#define SENSOR_DATA_ACQUISITION_SUCCESS 0
+// The GPIO pin where the DHT(11|22) sensor is connected.
 #define DHT_PIN 2
+
+//
+//
+//
+//
+// Real stuff happens here...
+//
+
+#define SENSOR_READ_OK 0
+#define SENSOR_READ_KO -1
+
 static SimpleDHT11 dht(DHT_PIN);
 
-const int sample_interval = 3000;
 
 void setup(){
   Serial.begin(115200);
-  Serial.println();
-  delay(5000);
+  Serial.println("+setup+");
+  delay(2000);
   Serial.println("Initializing WIFI...");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
-  Serial.println("Done");
-  Serial.print("Connecting");
-  wait_until_connected(CONNECTION_RETRY_INTERVAL);
-  Serial.println();
+  Serial.print("Polling until Wifi is UP...");
+  poll_until_wifi_up(CONNECTION_RETRY_INTERVAL);
+  Serial.println("-setup-");
 }
+
 
 void loop() {
   Serial.println("+loop+");
   int start_time = millis();
-  wait_until_connected(CONNECTION_RETRY_INTERVAL);
+  poll_until_wifi_up(CONNECTION_RETRY_INTERVAL);
+  
   float temperature = 0;
   float humidity = 0;
-  if (acquire_sensor_data(&temperature, &humidity) == SENSOR_DATA_ACQUISITION_SUCCESS) {
+
+  int res = SENSOR_READ_OK;
+  if ((res = read_sensor_data(&temperature, &humidity)) == SENSOR_READ_OK) {
       post_station_data(SENSOR_DATA_POST_URL, STATION_ID, temperature, humidity);
   }
-  int elapsed = millis() - start_time;
   Serial.println("-loop-");
 
-  delay(max(sample_interval - elapsed, 0));
-}
-
-void wait_until_connected(int retry_interval) {
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(retry_interval);
-    Serial.print(".");
-  }
-  Serial.print("Connected, IP address: ");
-  Serial.println(WiFi.localIP());
-}
-
-int acquire_sensor_data(float *temperature, float *humidity) {
-  // start working...
-  Serial.println("Sampling DHT11...");
-  
-  // read without samples.
-  byte temp = 0;
-  byte humi = 0;
-  int err = SimpleDHTErrSuccess;
-  if ((err = dht.read(&temp, &humi, NULL)) != SimpleDHTErrSuccess) {
-    Serial.print("Read DHT11 failed, err="); Serial.println(err);
-    return -1;
-  }
-  
-  Serial.print("Sample OK: ");
-  Serial.print((int)temperature); Serial.print(" *C, "); 
-  Serial.print((int)humidity); Serial.println(" H");
-
-  *temperature = temp;
-  *humidity = humi;
-  return SENSOR_DATA_ACQUISITION_SUCCESS;
-}
-
-void post_station_data(String url, String stationId, float temperature, float humidity) {
-  String body = "{\"stationId\":\"" + stationId + "\",\"temperature\":" + temperature + ",\"humidity\":" + humidity + "}";
-  http_post(url, body, "application/json");
+  delay_up_to(start_time, SAMPLE_INTERVAL);
 }
 
 /**
+ * Polls the wifi connection every poll_interval millis until it's up.
+ */
+void poll_until_wifi_up(int poll_interval) {
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(poll_interval);
+    Serial.print("X");
+  }
+  Serial.print("Local ip is: "); Serial.println(WiFi.localIP());
+}
+
+/**
+ * Reads the temperature and humidity from the DHT11 / DHT22 sensors.
+ */
+int read_sensor_data(float *temperature, float *humidity) {
+  Serial.println("+dht sampling+");
+  
+  byte temp = 0;
+  byte humi = 0;
+  
+  int err = SimpleDHTErrSuccess;
+  if ((err = dht.read(&temp, &humi, NULL)) != SimpleDHTErrSuccess) {
+    Serial.print("-dht sampling-, err="); Serial.println(err);
+    return -1;
+  }
+
+  *temperature = temp;
+  *humidity = humi;
+  return SENSOR_READ_OK;
+}
+
+
+void post_station_data(String url, String stationId, float temperature, float humidity) {
+  String body = "{\"stationId\":\"" + stationId + "\",\"temperature\":" + temperature + ",\"humidity\":" + humidity + "}";
+  http_post(url, body, "application/json", "Authorization");
+}
+
+
+/**
  * Performs an http post to the given url with the given body and content type.
- * Automatically the Authorization header is added, containing the (base64-encoded)
+ * Automatically a header is added, containing the (base64-encoded)
  * HMAC SHA265 keyed hash of the whole body.
  */
-void http_post(String url, String body, String contentType) {
+void http_post(String url, String body, String contentType, String hmac256_header) {
+  Serial.println("+http_post+");
   // calculate the hmac sha256 hash of the body we're gonna send.
   uint8_t hash[SHA256HMAC_SIZE];
   hmac_sha256(hmac_key, HMAC_KEY_LENGTH, body, hash);
   String base64_hash = base64::encode((const char *)hash);
-    
-  Serial.println("POST: url[" + url + "] body [" + body + "] Authorization [" + base64_hash + "]");
+
+  // actually perform the HTTP call.
+  Serial.println("POST: url[" + url + "] body [" + body + "] " + hmac256_header + " [" + base64_hash + "]");
   HTTPClient http;
   http.begin(url);
   http.addHeader("Content-Type", contentType);
-  http.addHeader("Authorization", base64_hash);
+  http.addHeader(hmac256_header, base64_hash);
   http.POST(body);
   http.writeToStream(&Serial);
   http.end();
-  Serial.println("POST: done");
+  Serial.println("-http_post-");
 }
+
 
 /**
  * @message should be a simple arduino string
  * @hash must be at least SHA256HMAC_SIZE long
  */
-void hmac_sha256(uint8_t *key, size_t key_len, String message, byte *hash) {  
+void hmac_sha256(uint8_t *key, size_t key_len, String message, byte *hash) {
   /* Create the HMAC instance with our key */
   SHA256HMAC hmac(key, key_len);
   
@@ -120,9 +147,15 @@ void hmac_sha256(uint8_t *key, size_t key_len, String message, byte *hash) {
 }
 
 
+/**
+ * Sleeps the amount of time (low capped at 0) needed to wake up when the provided interval
+ * elapses from the provided start time.
+ */
+void delay_up_to(unsigned long start_time, unsigned long interval) {
+    delay(max(interval - (millis() - start_time), 0));
+}
+
+
 int max(int a, int b) {
-  if (a > b) {
-    return a;
-  }
-  return b;
+  return a > b ? a : b;
 }
