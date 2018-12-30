@@ -1,20 +1,43 @@
+/*
+ * Copyright (c) 2018 Marco Nicolini
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 #include <ESP8266WiFi.h>            // https://arduino-esp8266.readthedocs.io/en/latest/index.html
 #include <ESP8266HTTPClient.h>
-#include <SimpleDHT.h>
+#include <SimpleDHT.h>              // https://github.com/winlinvip/SimpleDHT/
 #include <Crypto.h>                 // https://github.com/intrbiz/arduino-crypto note that this is esp2866 specific!
 #include <base64.h>
 
-//
-// Configuration, all stuff should be self explanatory.
-// Intervals are in millis.
-// 
-// The HMAC_KEY_LENGTH and hmac_key can taken by the ingestor server logs.
-// Just set your desidered key in the ingestor server and at startup it will log (to stdout)
-// an actual C snippet to past here.
-//
+/*
+ * Configuration 
+ * All stuff should be self explanatory, intervals are in millis.
+ * 
+ * The HMAC_KEY_LENGTH and hmac_key can taken by the ingestor server logs.
+ * Just set your desidered key in the ingestor server and at startup it will log (to stdout)
+ * an actual C snippet to past here.
+ */
+#define SERIAL_BAUD_RATE 115200
 #define WIFI_SSID "this_should_be_the_wifi_ssid"
 #define WIFI_PASS "this_should_be_your_wifi_password"
-#define CONNECTION_RETRY_INTERVAL 500
+#define WIFI_RETRY_INTERVAL 500
+#define INITIAL_SETUP_DELAY 2000
 
 #define SENSOR_DATA_POST_URL "http://192.168.1.10:5000/station-data"
 #define STATION_ID "limonaia"
@@ -23,15 +46,11 @@
 #define HMAC_KEY_LENGTH 46
 static uint8_t hmac_key[HMAC_KEY_LENGTH] = {49, 50, 97, 115, 112, 111, 100, 117, 52, 104, 114, 106, 49, 195, 168, 50, 51, 57, 48, 106, 114, 49, 195, 168, 48, 101, 57, 102, 106, 49, 195, 168, 48, 101, 105, 110, 102, 49, 195, 168, 50, 48, 101, 43, 51, 49};
 
-// The GPIO pin where the DHT(11|22) sensor is connected.
+/* The GPIO pin where the DHT(11|22) sensor is connected. */
 #define DHT_PIN 2
 
-//
-//
-//
-//
-// Real stuff happens here...
-//
+/* configuration end here */
+
 
 #define SENSOR_READ_OK 0
 #define SENSOR_READ_KO -1
@@ -40,13 +59,13 @@ static SimpleDHT11 dht(DHT_PIN);
 
 
 void setup(){
-  Serial.begin(115200);
+  Serial.begin(SERIAL_BAUD_RATE);
   Serial.println("+setup+");
-  delay(2000);
+  delay(INITIAL_SETUP_DELAY);
   Serial.println("Initializing WIFI...");
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   Serial.print("Polling until Wifi is UP...");
-  poll_until_wifi_up(CONNECTION_RETRY_INTERVAL);
+  poll_until_wifi_up(WIFI_RETRY_INTERVAL);
   Serial.println("-setup-");
 }
 
@@ -54,7 +73,7 @@ void setup(){
 void loop() {
   Serial.println("+loop+");
   int start_time = millis();
-  poll_until_wifi_up(CONNECTION_RETRY_INTERVAL);
+  poll_until_wifi_up(WIFI_RETRY_INTERVAL);
   
   float temperature = 0;
   float humidity = 0;
@@ -149,7 +168,7 @@ void hmac_sha256(uint8_t *key, size_t key_len, String message, byte *hash) {
 
 /**
  * Sleeps the amount of time (low capped at 0) needed to wake up when the provided interval
- * elapses from the provided start time.
+ * elapses from the given start time.
  */
 void delay_up_to(unsigned long start_time, unsigned long interval) {
     delay(max(interval - (millis() - start_time), 0));
