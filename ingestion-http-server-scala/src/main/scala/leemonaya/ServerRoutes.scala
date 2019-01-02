@@ -3,7 +3,7 @@ package leemonaya
 import cats.effect.Sync
 import io.circe.Json
 import org.http4s.HttpRoutes
-import org.http4s.circe._
+import org.http4s.circe.jsonEncoder
 import org.http4s.dsl.Http4sDsl
 
 case class StationFeedMsg(stationId: String, temperature: Double, humidity: Double)
