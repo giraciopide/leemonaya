@@ -9,7 +9,7 @@ The idea is that periodically,
 
 Includes:
 - firmware for a ESP8266E Wifi board, to be compiled and flashed via the Arduino IDE
-- http server to ingest sensor readings (over HTTP POST) and store them in database
+- http server to ingest sensor readings (over HTTP POST) and store them in database (2 versions! One in python/flask and the other in node/typescript)
 
 Authentication is performed by means of a shared secret key that is used both in client (hardcoded in the ESP8266 firwmare)
 and server to calculate the HMAC SHA256 hash of the whole post request body. 
