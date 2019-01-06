@@ -10,7 +10,7 @@ from werkzeug.exceptions import BadRequest, Unauthorized
 
 DB_PATH='leemonaya.sqlite3'
 ENABLE_AUTHORIZATION = True
-HMAC_KEY = bytearray('12aspodu4hrj1è2390jr1è0e9fj1è0einf1è20e+31', 'utf-8')
+HMAC_KEY = bytearray('casdcasdcasdkjn12l3kjn412lkjdn1lkjnckajsd1234uh8ch9ch1wsjhv1co8', 'utf-8')
 
 def initialize_schema_if_needed(db_path):
     conn = sqlite3.connect(db_path)

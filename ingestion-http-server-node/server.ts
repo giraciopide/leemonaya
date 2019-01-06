@@ -23,26 +23,33 @@ import express, {Express, Request} from 'express'
 import bodyParser from 'body-parser'
 import http from 'http'
 import { PersistenceServiceFactory } from './persistence'
-import { isValidStationReadingMsg } from './messages'
+import { isValidStationReadingMsg, StationFeeds } from './messages'
 import { HMAC } from "fast-sha256"
 import { Option } from 'prelude-ts';
+import cors from 'cors';
 
 /**
  * Configuration
  */
-
-const port: number = 3000
+const port: number = 5000
 const hostname: string = '0.0.0.0'
 const disableAuth = false
-const hmacKey = stringToUint8Array('12ekjnrl1kjnrlqsakndvqwjern1pe2on1lkndv1ldnvcasdcasdc1jn');
+const hmacKey = stringToUint8Array('casdcasdcasdkjn12l3kjn412lkjdn1lkjnckajsd1234uh8ch9ch1wsjhv1co8');
 
 /**
  * Real stuff starts here
  */
-
 const app: Express = express()
+app.use(cors())
 const persistence = PersistenceServiceFactory.get();
 
+/*
+Test with:
+curl -i --header 'Authorization: QdI9+pLJ1kVaLQE8zmz/SJoDVFqC+Bk/m1Vbbr5/hPs=' \
+        --header "Content-type: application/json" \
+        -d '{"stationId":"testbench","temperature":12,"humidity":23}' \
+        http://localhost:3000/station-data
+*/
 app.use('/station-data', bodyParser.json({
     type: '*/*',
     limit: '10kb',
@@ -69,17 +76,23 @@ app.post('/station-data', (req, res, next) => {
     res.sendStatus(204)
 })
 
-app.get('/test/', (req, res) => {
-    res.json({message: 'Hello World'})
-})
-
 /*
-Test with:
-curl -i --header 'Authorization: QdI9+pLJ1kVaLQE8zmz/SJoDVFqC+Bk/m1Vbbr5/hPs=' \
-        --header "Content-type: application/json" \
-        -d '{"stationId":"testbench","temperature":12,"humidity":23}' \
-        http://localhost:3000/station-data
-*/
+    Test with:
+    curl -i http://localhost:3000/data/from/`date +%s`000
+    curl -i http://localhost:3000/data/from/0
+ */
+
+app.get('/data/from/:from', (req, res) => {
+    Option.ofNullable(req.params.from)
+        .map(asNumber)
+        .map(fromEpoch => persistence.loadLatest(fromEpoch))
+        .map(feeds => ({ feeds: feeds } as StationFeeds))
+        .ifSome(feeds => {
+            res.write(JSON.stringify(feeds));
+            res.end();
+        })
+        .getOrThrow('Error while loading data');
+})
 
 app.listen(port, hostname, () => {
     console.log('====================================================')
@@ -119,9 +132,9 @@ function hmacSignatureMatches(data: Uint8Array, key: Uint8Array, base64EncodedSi
     const base64ComputedHash = Buffer.from(binaryHash).toString('base64')
     const valid = base64ComputedHash == base64EncodedSignature;
     if (!valid) {
-        console.debug('HMAC SHA256 does not matches');
-        console.debug(`server computed hmac_sha256: [${base64ComputedHash}]`)
-        console.debug(`client provided hmac_sha256: [${base64EncodedSignature}]`)
+        console.warn('HMAC SHA256 does not matches');
+        console.warn(`server computed hmac_sha256: [${base64ComputedHash}]`)
+        console.warn(`client provided hmac_sha256: [${base64EncodedSignature}]`)
     }
     return valid;
 }
@@ -130,4 +143,13 @@ function getAuthorizationHeader(headers: http.IncomingHttpHeaders): Option<strin
     const h = headers['authorization'];
     const hh = Array.isArray(h) ? h[0] : h;
     return Option.ofNullable(hh);
+}
+
+function asNumber(obj: any): number {
+    if (typeof(obj) !== 'string') {
+        throw new Error('Cannot convert a non-string to a number');
+    }
+    return Option.ofNullable(parseInt(obj as string))
+        .filter(num => !Number.isNaN(num))
+        .getOrThrow('Not a valid number');
 }

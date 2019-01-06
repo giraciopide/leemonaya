@@ -34,17 +34,21 @@
  * an actual C snippet to past here.
  */
 #define SERIAL_BAUD_RATE 115200
-#define WIFI_SSID "this_should_be_the_wifi_ssid"
-#define WIFI_PASS "this_should_be_your_wifi_password"
+#define WIFI_SSID "your_wifi_ssid_here"
+#define WIFI_PASS "your_wifi_password_here"
 #define WIFI_RETRY_INTERVAL 500
 #define INITIAL_SETUP_DELAY 2000
 
-#define SENSOR_DATA_POST_URL "http://192.168.1.10:5000/station-data"
+#define SENSOR_DATA_POST_URL "http://wombat.cloud.tilaa.com:5000/station-data"
 #define STATION_ID "limonaia"
 #define SAMPLE_INTERVAL 5000
 
-#define HMAC_KEY_LENGTH 46
-static uint8_t hmac_key[HMAC_KEY_LENGTH] = {49, 50, 97, 115, 112, 111, 100, 117, 52, 104, 114, 106, 49, 195, 168, 50, 51, 57, 48, 106, 114, 49, 195, 168, 48, 101, 57, 102, 106, 49, 195, 168, 48, 101, 105, 110, 102, 49, 195, 168, 50, 48, 101, 43, 51, 49};
+#define HMAC_KEY_LENGTH 63
+static uint8_t hmac_key[HMAC_KEY_LENGTH] = { 99, 97, 115, 100, 99, 97, 115, 100, 99, 97, 115, 100, 107, 106, 
+                                            110, 49, 50, 108, 51, 107, 106, 110, 52, 49, 50, 108, 107, 106, 
+                                            100, 110, 49, 108, 107, 106, 110, 99, 107, 97, 106, 115, 100, 49, 
+                                            50, 51, 52, 117, 104, 56, 99, 104, 57, 99, 104, 49, 119, 115, 106, 
+                                            104, 118, 49, 99, 111, 56 };
 
 /* The GPIO pin where the DHT(11|22) sensor is connected. */
 #define DHT_PIN 2
