@@ -1,0 +1,20 @@
+{
+  "name": "web-client-minimal",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-loader": "^5.3.3",
+    "typescript": "^3.2.2",
+    "webpack": "^4.28.3",
+    "webpack-cli": "^3.2.0",
+    "webpack-dev-server": "^3.1.14"
+  },
+  "scripts": {
+    "start": "webpack-dev-server",
+    "tsc": "tsc"
+  },
+  "dependencies": {
+    "prelude-ts": "^0.8.2"
+  }
+}
