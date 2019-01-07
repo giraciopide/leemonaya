@@ -2,7 +2,7 @@ import { StationFeeds, StationFeed } from "./messages";
 import { ChartPoint } from "chart.js";
 import { Option } from 'prelude-ts';
 
-const BACKEND_URL = 'http://wombat.cloud.tilaa.com:5000'; // TODO make configurable
+const BACKEND_URL = '@HTTP_SERVER_HOST@:@HTTP_SERVER_PORT@'; // set by configure script in the root folder.
 
 interface StationFeedSerie {
     label: string,
@@ -75,4 +75,4 @@ function _loadSince(fromTime: number): Promise<StationFeedSerie[]> {
     return Promise.resolve(out);
 }
 
-export { StationFeedSerie, _loadSince as fetchStationDataSince }
+export { StationFeedSerie, loadSince as fetchStationDataSince }

@@ -19,7 +19,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <ESP8266WiFi.h>            // https://arduino-esp8266.readthedocs.io/en/latest/index.html
+#include <ESP8266WiFi.h>            // https://github.com/esp8266/Arduino and https://arduino-esp8266.readthedocs.io/en/latest/index.html
 #include <ESP8266HTTPClient.h>
 #include <SimpleDHT.h>              // https://github.com/winlinvip/SimpleDHT/
 #include <Crypto.h>                 // https://github.com/intrbiz/arduino-crypto note that this is esp2866 specific!
@@ -32,14 +32,16 @@
  * The HMAC_KEY_LENGTH and hmac_key can taken by the ingestor server logs.
  * Just set your desidered key in the ingestor server and at startup it will log (to stdout)
  * an actual C snippet to past here.
+ * 
+ * All strings of the form @XXX@ can be either modified by hand or using the configure script in the root folder.
  */
 #define SERIAL_BAUD_RATE 115200
-#define WIFI_SSID "your_wifi_ssid_here"
-#define WIFI_PASS "your_wifi_password_here"
+#define WIFI_SSID "@WIFI_SSID@" 
+#define WIFI_PASS "@WIFI_PASS@"
 #define WIFI_RETRY_INTERVAL 500
 #define INITIAL_SETUP_DELAY 2000
 
-#define SENSOR_DATA_POST_URL "http://wombat.cloud.tilaa.com:5000/station-data"
+#define SENSOR_DATA_POST_URL "@HTTP_SERVER_HOST@:@HTTP_SERVER_PORT@/station-data"
 #define STATION_ID "limonaia"
 #define SAMPLE_INTERVAL 5000
 

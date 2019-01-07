@@ -1,0 +1,19 @@
+#!/bin/bash
+
+WIFI_SSID="your_wifi_ssid_here"
+WIFI_PASS="your_wifi_pass_here"
+HTTP_SERVER_HOST="http://localhost"
+HTTP_SERVER_PORT="5000"
+
+echo "Performing search and replace here..."
+
+for f in leemonaya-firmware/leemonaya-firmware.ino ingestion-http-server-node/server.ts web-client-minimal/src/backend.ts;
+do
+	sed -i 's/@WIFI_SSID@/${WIFI_SSID}' $f
+	sed -i 's/@WIFI_PASS@/${WIFI_PASS}' $f
+	sed -i 's/@HTTP_SERVER_HOST@/${HTTP_SERVER_HOST}' $f
+	sed -i 's/@HTTP_SERVER_PORT@/${HTTP_SERVER_PORT}' $f
+done;
+
+echo "Done"
+
