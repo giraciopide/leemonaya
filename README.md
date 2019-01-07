@@ -34,5 +34,4 @@ Ingestion web server:
 - current db is sqlite3 (other databases support is trivial, as long as they have a compliant python3 db api).
 
 Not yet implemented:
-- web interface to view/explore the data
 - https, to eliminate vulnerabilities to message replay
