@@ -31,7 +31,7 @@ import cors from 'cors';
 /**
  * Configuration
  */
-const port: number = Number.parseInt('@HTTP_SERVER_PORT@') // set by configure script in the root folder.
+const port: number = Number.parseInt('5000')
 const hostname: string = '0.0.0.0'
 const disableAuth = false
 const hmacKey = stringToUint8Array('casdcasdcasdkjn12l3kjn412lkjdn1lkjnckajsd1234uh8ch9ch1wsjhv1co8');

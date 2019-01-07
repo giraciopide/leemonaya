@@ -2,7 +2,7 @@ import { StationFeeds, StationFeed } from "./messages";
 import { ChartPoint } from "chart.js";
 import { Option } from 'prelude-ts';
 
-const BACKEND_URL = '@HTTP_SERVER_HOST@:@HTTP_SERVER_PORT@'; // set by configure script in the root folder.
+const BACKEND_URL = 'http://leemonaya.tilaa.cloud:5000'; // set by configure script in the root folder.
 
 interface StationFeedSerie {
     label: string,

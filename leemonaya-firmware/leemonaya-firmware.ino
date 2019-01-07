@@ -41,7 +41,7 @@
 #define WIFI_RETRY_INTERVAL 500
 #define INITIAL_SETUP_DELAY 2000
 
-#define SENSOR_DATA_POST_URL "@HTTP_SERVER_HOST@:@HTTP_SERVER_PORT@/station-data"
+#define SENSOR_DATA_POST_URL "http://leemonaya.tilaa.cloud:5000/station-data"
 #define STATION_ID "limonaia"
 #define SAMPLE_INTERVAL 5000
 
