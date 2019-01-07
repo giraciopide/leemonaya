@@ -10,15 +10,16 @@ The idea is that periodically,
 Includes:
 - firmware for a ESP8266E Wifi board, to be compiled and flashed via the Arduino IDE
 - http server to ingest sensor readings (over HTTP POST) and store them in database (2 versions! One in python/flask and the other in node/typescript)
+- a minimalistic web single page application ui, made in typescript + webpack + chart.js
 
 Authentication is performed by means of a shared secret key that is used both in client (hardcoded in the ESP8266 firwmare)
 and server to calculate the HMAC SHA256 hash of the whole post request body. 
 The base64 encoded hash of the request body is passed in the http 'Authorization' header.
 
 IOT Hardware:
-- The board: http://blog.jeronimus.net/2016/07/esp8266-wangtongze-arduino-uno-shield.html
+- The boards i'm using: https://wiki.wemos.cc/products:d1:d1 and http://blog.jeronimus.net/2016/07/esp8266-wangtongze-arduino-uno-shield.html
 - DHT11 and DHT22, Digital temp/humidity sensors: https://cdn-learn.adafruit.com/downloads/pdf/dht.pdf
-- A USB to TTL adapter to connect to the board serial interface to flash the firmware.
+- A USB to TTL adapter to connect to the board serial interface to flash the firmware (not needed for the Wemos d1 r2 board, since it has onboard USB)
   I used this: http://www.dsdtech-global.com/search/label/USB%20to%20TTL%20Serial%20Converter
 
 IOT Software/Firmware used:

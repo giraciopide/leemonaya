@@ -19,49 +19,54 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/***************************************************************/
+/* configuration starts here                                   */
+/***************************************************************/
+
+/*
+ * All stuff should be self explanatory, intervals are in millis.
+ * 
+ * The HMAC_KEY_LENGTH and hmac_key can taken by the ingestor server logs.
+ * Just set your desidered key in the ingestor server and at startup it will log (to stdout)
+ * an actual C snippet to past here. 
+ */
+#define SERIAL_BAUD_RATE 115200
+#define WIFI_SSID "wifi_ssid" 
+#define WIFI_PASS "wifi_password"
+#define WIFI_RETRY_INTERVAL 500
+#define INITIAL_SETUP_DELAY 15000
+
+#define SENSOR_DATA_POST_URL "http://localhost:5000/station-data"
+#define STATION_ID "limonaia"
+#define SAMPLE_INTERVAL 30000
+
+#define HMAC_KEY_LENGTH 60
+static uint8_t hmac_key[HMAC_KEY_LENGTH] = {99, 97, 115, 100, 97, 115, 100, 99, 115, 100, 107, 110, 49, 50, 108, 51, 107, 106, 110, 52, 49, 50, 108, 107, 106, 100, 110, 49, 108, 107, 106, 110, 99, 107, 97, 106, 115, 100, 49, 50, 51, 52, 117, 104, 56, 99, 104, 57, 99, 104, 49, 119, 115, 106, 104, 118, 49, 99, 111, 56};
+
+#define USE_DHT22
+/* The GPIO pin where the DHT(11|22) sensor is connected. */
+#define DHT_PIN 16
+
+/***************************************************************/
+/* configuration ends here                                     */
+/***************************************************************/
+
 #include <ESP8266WiFi.h>            // https://github.com/esp8266/Arduino and https://arduino-esp8266.readthedocs.io/en/latest/index.html
 #include <ESP8266HTTPClient.h>
 #include <SimpleDHT.h>              // https://github.com/winlinvip/SimpleDHT/
 #include <Crypto.h>                 // https://github.com/intrbiz/arduino-crypto note that this is esp2866 specific!
 #include <base64.h>
 
-/*
- * Configuration 
- * All stuff should be self explanatory, intervals are in millis.
- * 
- * The HMAC_KEY_LENGTH and hmac_key can taken by the ingestor server logs.
- * Just set your desidered key in the ingestor server and at startup it will log (to stdout)
- * an actual C snippet to past here.
- * 
- * All strings of the form @XXX@ can be either modified by hand or using the configure script in the root folder.
- */
-#define SERIAL_BAUD_RATE 115200
-#define WIFI_SSID "@WIFI_SSID@" 
-#define WIFI_PASS "@WIFI_PASS@"
-#define WIFI_RETRY_INTERVAL 500
-#define INITIAL_SETUP_DELAY 2000
-
-#define SENSOR_DATA_POST_URL "http://leemonaya.tilaa.cloud:5000/station-data"
-#define STATION_ID "limonaia"
-#define SAMPLE_INTERVAL 5000
-
-#define HMAC_KEY_LENGTH 63
-static uint8_t hmac_key[HMAC_KEY_LENGTH] = { 99, 97, 115, 100, 99, 97, 115, 100, 99, 97, 115, 100, 107, 106, 
-                                            110, 49, 50, 108, 51, 107, 106, 110, 52, 49, 50, 108, 107, 106, 
-                                            100, 110, 49, 108, 107, 106, 110, 99, 107, 97, 106, 115, 100, 49, 
-                                            50, 51, 52, 117, 104, 56, 99, 104, 57, 99, 104, 49, 119, 115, 106, 
-                                            104, 118, 49, 99, 111, 56 };
-
-/* The GPIO pin where the DHT(11|22) sensor is connected. */
-#define DHT_PIN 2
-
-/* configuration end here */
-
-
 #define SENSOR_READ_OK 0
 #define SENSOR_READ_KO -1
 
+#ifdef USE_DHT11
 static SimpleDHT11 dht(DHT_PIN);
+#endif
+
+#ifdef USE_DHT22
+static SimpleDHT22 dht(DHT_PIN);
+#endif
 
 
 void setup(){
@@ -93,6 +98,7 @@ void loop() {
   delay_up_to(start_time, SAMPLE_INTERVAL);
 }
 
+
 /**
  * Polls the wifi connection every poll_interval millis until it's up.
  */
@@ -104,23 +110,20 @@ void poll_until_wifi_up(int poll_interval) {
   Serial.print("Local ip is: "); Serial.println(WiFi.localIP());
 }
 
+
 /**
  * Reads the temperature and humidity from the DHT11 / DHT22 sensors.
  */
 int read_sensor_data(float *temperature, float *humidity) {
   Serial.println("+dht sampling+");
-  
-  byte temp = 0;
-  byte humi = 0;
-  
+
   int err = SimpleDHTErrSuccess;
-  if ((err = dht.read(&temp, &humi, NULL)) != SimpleDHTErrSuccess) {
+  if ((err = dht.read2(temperature, humidity, NULL)) != SimpleDHTErrSuccess) {
     Serial.print("-dht sampling-, err="); Serial.println(err);
-    return -1;
+    return SENSOR_READ_KO;
   }
 
-  *temperature = temp;
-  *humidity = humi;
+  Serial.println("-dht sampling-");
   return SENSOR_READ_OK;
 }
 
