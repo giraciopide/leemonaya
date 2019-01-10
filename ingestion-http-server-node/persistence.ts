@@ -74,6 +74,50 @@ class Sqlite3PersistenceService implements PersistenceService {
     }
 }
 
+function nearestTick(value: number, tick: number) {
+    return tick * Math.round(value / tick);
+}
+
+/**
+ * Group the given array by a grouping function
+ */
+function groupBy<T, G>(ts: T[], fn: (t: T) => G): T[][] {
+    const groups = new Map<String, T[]>();
+    for (let t of ts) {
+        const groupKey = JSON.stringify(fn(t))
+        const group = groups.get(groupKey)
+        if (group) {
+            group.push(t)
+        } else {
+            groups.set(groupKey, [t])
+        }
+    }
+    
+    return [ ...groups.values() ];
+}
+
+/**
+ * @param feeds assumed ordered by timestamp.
+ * @param millisWindowSize 
+ */
+export function decimate(feeds: StationFeed[], millisWindowSize: number): StationFeed[] {
+    let sameIdAndSameRoundedTstamp: (feed: StationFeed) => any = feed => ({
+        tstamp: nearestTick(feed.tstamp, millisWindowSize),
+        stationId: feed.stationId
+    });
+
+    return groupBy(feeds, sameIdAndSameRoundedTstamp)
+        .filter(group => group.length > 0)
+        .map(feeds => feeds.reduce((acc, feed) => ({
+                    tstamp: nearestTick(acc.tstamp, millisWindowSize),
+                    id: acc.id,
+                    stationId: acc.stationId,
+                    humidity: (acc.humidity + feed.temperature) / 2.0,
+                    temperature: (acc.temperature + feed.temperature) / 2.0,
+                })
+        ));
+}
+
 function identityLogger<T>(t: T): T {
     console.log(`--> [${JSON.stringify(t)}]`)
     return t;

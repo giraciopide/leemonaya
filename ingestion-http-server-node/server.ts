@@ -22,7 +22,7 @@
 import express, {Express, Request} from 'express'
 import bodyParser from 'body-parser'
 import http from 'http'
-import { PersistenceServiceFactory } from './persistence'
+import { PersistenceServiceFactory, decimate } from './persistence'
 import { isValidStationReadingMsg, StationFeeds } from './messages'
 import { HMAC } from "fast-sha256"
 import { Option } from 'prelude-ts';
@@ -86,6 +86,7 @@ app.get('/data/from/:from', (req, res) => {
     Option.ofNullable(req.params.from)
         .map(asNumber)
         .map(fromEpoch => persistence.loadLatest(fromEpoch))
+        .map(tooManyFeed => decimate(tooManyFeed, 2 * 60 * 1000))
         .map(feeds => ({ feeds: feeds } as StationFeeds))
         .ifSome(feeds => {
             res.write(JSON.stringify(feeds));
