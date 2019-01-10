@@ -112,7 +112,7 @@ export function decimate(feeds: StationFeed[], millisWindowSize: number): Statio
                     tstamp: nearestTick(acc.tstamp, millisWindowSize),
                     id: acc.id,
                     stationId: acc.stationId,
-                    humidity: (acc.humidity + feed.temperature) / 2.0,
+                    humidity: (acc.humidity + feed.humidity) / 2.0,
                     temperature: (acc.temperature + feed.temperature) / 2.0,
                 })
         ));
