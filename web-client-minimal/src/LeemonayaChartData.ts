@@ -56,6 +56,9 @@ export class LeemonayaChart {
                         type: 'time',
                         time: {
                             unit: 'second'
+                        },
+                        ticks: {
+                          autoSkip: true  
                         }
                     }]
                 }
