@@ -86,8 +86,8 @@ app.get('/data/from/:from', (req, res) => {
     Option.ofNullable(req.params.from)
         .map(asNumber)
         .map(fromEpoch => persistence.loadLatest(fromEpoch))
-        .map(tooManyFeed => decimate(tooManyFeed, 2 * 60 * 1000))
-        .map(feeds => ({ feeds: feeds } as StationFeeds))
+        .map(tooManyFeed => decimate(tooManyFeed, 10 * 60 * 1000))
+        .map(decimatedFeeds => ({ feeds: decimatedFeeds } as StationFeeds))
         .ifSome(feeds => {
             res.write(JSON.stringify(feeds));
             res.end();

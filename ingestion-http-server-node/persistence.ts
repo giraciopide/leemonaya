@@ -97,6 +97,7 @@ function groupBy<T, G>(ts: T[], fn: (t: T) => G): T[][] {
 }
 
 /**
+ * Decimates the StationFeed array by grouping and averaging on timestamp buckets.
  * @param feeds assumed ordered by timestamp.
  * @param millisWindowSize 
  */
