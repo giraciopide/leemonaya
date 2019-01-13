@@ -109,14 +109,19 @@ export function decimate(feeds: StationFeed[], millisWindowSize: number): Statio
 
     return groupBy(feeds, sameIdAndSameRoundedTstamp)
         .filter(group => group.length > 0)
-        .map(feeds => feeds.reduce((acc, feed) => ({
-                    tstamp: nearestTick(acc.tstamp, millisWindowSize),
-                    id: acc.id,
-                    stationId: acc.stationId,
-                    humidity: (acc.humidity + feed.humidity) / 2.0,
-                    temperature: (acc.temperature + feed.temperature) / 2.0,
-                })
-        ));
+        .map(feeds => {
+                const avg = feeds.reduce((acc, feed) => ({
+                        tstamp: nearestTick(acc.tstamp, millisWindowSize),
+                        id: acc.id,
+                        stationId: acc.stationId,
+                        humidity: (acc.humidity + feed.humidity),
+                        temperature: (acc.temperature + feed.temperature),
+                    }))
+                avg.humidity = avg.humidity / feeds.length
+                avg.temperature = avg.temperature / feeds.length
+                return avg;
+            }
+        );
 }
 
 function identityLogger<T>(t: T): T {
