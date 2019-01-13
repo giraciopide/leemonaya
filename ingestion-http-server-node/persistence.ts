@@ -1,6 +1,7 @@
 import { StationReadingsMsg, StationFeed } from "./messages";
 import BetterSqlite3 from 'better-sqlite3';
 import Database from 'better-sqlite3';
+import { groupBy, nearestTick } from "./util";
 
 export interface PersistenceService {
     store(payload: StationReadingsMsg): StationFeed;
@@ -74,27 +75,6 @@ class Sqlite3PersistenceService implements PersistenceService {
     }
 }
 
-function nearestTick(value: number, tick: number) {
-    return tick * Math.round(value / tick);
-}
-
-/**
- * Group the given array by a grouping function
- */
-function groupBy<T, G>(ts: T[], fn: (t: T) => G): T[][] {
-    const groups = new Map<String, T[]>();
-    for (let t of ts) {
-        const groupKey = JSON.stringify(fn(t))
-        const group = groups.get(groupKey)
-        if (group) {
-            group.push(t)
-        } else {
-            groups.set(groupKey, [t])
-        }
-    }
-    
-    return [ ...groups.values() ];
-}
 
 /**
  * Decimates the StationFeed array by grouping and averaging on timestamp buckets.

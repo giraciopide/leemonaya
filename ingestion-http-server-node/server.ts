@@ -27,6 +27,7 @@ import { isValidStationReadingMsg, StationFeeds } from './messages'
 import { HMAC } from "fast-sha256"
 import { Option } from 'prelude-ts';
 import cors from 'cors';
+import { stringToUint8Array, asNumber } from './util';
 
 /**
  * Configuration
@@ -34,7 +35,7 @@ import cors from 'cors';
 const port: number = Number.parseInt('5000')
 const hostname: string = '0.0.0.0'
 const disableAuth = false
-const hmacKey = stringToUint8Array('casdcasdcasdkjn12l3kjn412lkjdn1lkjnckajsd1234uh8ch9ch1wsjhv1co8');
+const hmacKey = stringToUint8Array('1asldjcn1l2ejrnp21iehrf1è0ifn1jkf 1lekjn1on1id v1wdjn1è');
 
 /**
  * Real stuff starts here
@@ -110,25 +111,7 @@ app.listen(port, hostname, () => {
     console.log(asFirmwareFriendlyDeclaration(hmacKey));
 })
 
-//
-// helpers
-//
 
-function stringToUint8Array(s: String): Uint8Array {
-    let ua = new Uint8Array(s.length);
-    for (let i = 0; i < s.length; i++) {
-        ua[i] = s.charCodeAt(i);
-    }
-    return ua;
-}
-
-function Uint8ArrayToString(ua: Uint8Array): string {
-    let s = '';
-    for (let i = 0; i < ua.length; i++) {
-        s += String.fromCharCode(ua[i]);
-    }
-    return s;
-}
 
 function asFirmwareFriendlyDeclaration(data: Uint8Array): string {
     return '#define HMAC_KEY_LENGTH ' + data.length + '\nstatic uint8_t hmac_key[HMAC_KEY_LENGTH] = {' + data.join(', ') + '};';
@@ -153,11 +136,5 @@ function getAuthorizationHeader(headers: http.IncomingHttpHeaders): Option<strin
     return Option.ofNullable(hh);
 }
 
-function asNumber(obj: any): number {
-    if (typeof(obj) !== 'string') {
-        throw new Error('Cannot convert a non-string to a number');
-    }
-    return Option.ofNullable(parseInt(obj as string))
-        .filter(num => !Number.isNaN(num))
-        .getOrThrow('Not a valid number');
-}
+
+
