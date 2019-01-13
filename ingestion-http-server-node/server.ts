@@ -95,6 +95,13 @@ app.get('/data/from/:from', (req, res) => {
         .getOrThrow('Error while loading data');
 })
 
+app.get('/epoch', (req, res) => {
+    res.write(JSON.stringify({
+        epoch: new Date().getTime()
+    }))
+    res.end();
+})
+
 app.listen(port, hostname, () => {
     console.log('====================================================')
     console.log(`Leemonaya API server UP at [${hostname}:${port}]`);
