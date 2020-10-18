@@ -30,9 +30,9 @@
  * Just set your desidered key in the ingestor server and at startup it will log (to stdout)
  * an actual C snippet to past here. 
  */
-#define SERIAL_BAUD_RATE 115200
-#define WIFI_SSID "wifi_ssid" 
-#define WIFI_PASS "wifi_password"
+#define SERIAL_BAUD_RATE 9600
+#define WIFI_SSID "enter_your_wifi_ssid_here" 
+#define WIFI_PASS "enter_your_wifi_pass_here"
 #define WIFI_RETRY_INTERVAL 500
 #define INITIAL_SETUP_DELAY 15000
 
@@ -40,8 +40,10 @@
 #define STATION_ID "limonaia"
 #define SAMPLE_INTERVAL 30000
 
-#define HMAC_KEY_LENGTH 60
-static uint8_t hmac_key[HMAC_KEY_LENGTH] = {99, 97, 115, 100, 97, 115, 100, 99, 115, 100, 107, 110, 49, 50, 108, 51, 107, 106, 110, 52, 49, 50, 108, 107, 106, 100, 110, 49, 108, 107, 106, 110, 99, 107, 97, 106, 115, 100, 49, 50, 51, 52, 117, 104, 56, 99, 104, 57, 99, 104, 49, 119, 115, 106, 104, 118, 49, 99, 111, 56};
+#define SHA256_HMAC_LEN 32
+#define HMAC_KEY_LEN 60
+
+static uint8_t hmac_key[HMAC_KEY_LEN] = {99, 97, 115, 100, 97, 115, 100, 99, 115, 100, 107, 110, 49, 50, 108, 51, 107, 106, 110, 52, 49, 50, 108, 107, 106, 100, 110, 49, 108, 107, 106, 110, 99, 107, 97, 106, 115, 100, 49, 50, 51, 52, 117, 104, 56, 99, 104, 57, 99, 104, 49, 119, 115, 106, 104, 118, 49, 99, 111, 56};
 
 #define USE_DHT22
 /* The GPIO pin where the DHT(11|22) sensor is connected. */
@@ -54,7 +56,10 @@ static uint8_t hmac_key[HMAC_KEY_LENGTH] = {99, 97, 115, 100, 97, 115, 100, 99, 
 #include <ESP8266WiFi.h>            // https://github.com/esp8266/Arduino and https://arduino-esp8266.readthedocs.io/en/latest/index.html
 #include <ESP8266HTTPClient.h>
 #include <SimpleDHT.h>              // https://github.com/winlinvip/SimpleDHT/
-#include <Crypto.h>                 // https://github.com/intrbiz/arduino-crypto note that this is esp2866 specific!
+
+#include <Crypto.h>                 // https://github.com/rweather/arduinolibs
+#include <SHA256.h>                 // https://github.com/rweather/arduinolibs
+
 #include <base64.h>
 
 #define SENSOR_READ_OK 0
@@ -67,7 +72,6 @@ static SimpleDHT11 dht(DHT_PIN);
 #ifdef USE_DHT22
 static SimpleDHT22 dht(DHT_PIN);
 #endif
-
 
 void setup(){
   Serial.begin(SERIAL_BAUD_RATE);
@@ -142,8 +146,8 @@ void post_station_data(String url, String stationId, float temperature, float hu
 void http_post(String url, String body, String contentType, String hmac256_header) {
   Serial.println("+http_post+");
   // calculate the hmac sha256 hash of the body we're gonna send.
-  uint8_t hash[SHA256HMAC_SIZE];
-  hmac_sha256(hmac_key, HMAC_KEY_LENGTH, body, hash);
+  uint8_t hash[SHA256_HMAC_LEN];
+  hmac_sha256(hmac_key, HMAC_KEY_LEN, body, hash);
   String base64_hash = base64::encode((const char *)hash);
 
   // actually perform the HTTP call.
@@ -159,19 +163,13 @@ void http_post(String url, String body, String contentType, String hmac256_heade
 }
 
 
-/**
- * @message should be a simple arduino string
- * @hash must be at least SHA256HMAC_SIZE long
- */
-void hmac_sha256(uint8_t *key, size_t key_len, String message, byte *hash) {
-  /* Create the HMAC instance with our key */
-  SHA256HMAC hmac(key, key_len);
-  
-  /* Update the HMAC with just a plain string (null terminated) */
-  hmac.doUpdate((const char *)message.c_str(), message.length());
-
-  /* Finish the HMAC calculation and fill up the hash buffer */
-  hmac.doFinal(hash);
+void hmac_sha256(uint8_t *key, size_t key_len, String message, byte *hmac_hash) {
+  Serial.println("performing sha256 hmac hashing...");
+  SHA256 hasher;
+  hasher.resetHMAC((const void *)key, key_len);
+  hasher.update((const void *)message.c_str(), message.length());
+  hasher.finalizeHMAC((const void *)key, sizeof(key), (void *)hmac_hash, SHA256_HMAC_LEN);
+  Serial.println("done");
 }
 
 
